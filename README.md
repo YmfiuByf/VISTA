@@ -1,72 +1,58 @@
-# VISTA
+VISTA
 
-**VISTA** (**Vi**deo Transmission over A **S**emantic Communication Approach) is a semantic video transmission framework for wireless environments.  
-Instead of transmitting all pixels of every frame, VISTA focuses on transmitting **semantics** of the video, aiming to reduce bandwidth consumption while preserving visual quality.
+VISTA (Video Transmission over A Semantic Communication Approach) is a semantic video transmission framework for wireless environments.
+Instead of transmitting full pixel-level video frames, VISTA transmits semantic information to reduce bandwidth consumption while maintaining reconstruction quality.
 
-The framework combines:
+This repository contains the implementation of the VISTA pipeline and the main components used in the project.
 
-- **Semantic Segmentation** to separate static background and dynamic objects
-- **Dynamic JSCC** for channel-adaptive semantic transmission
-- **Video Frame Interpolation** to recover missing behavior frames at the receiver
+Overview
 
-This repository contains the implementation of the VISTA pipeline and the components used in the paper.
+Traditional wireless video transmission usually sends pixel-level information directly, which can require high bandwidth and processing cost.
+VISTA addresses this problem by separating video content into semantic parts and transmitting only the most necessary information.
 
----
+Specifically, VISTA divides the video into:
 
-## Overview
+Environment segment: static background information
 
-Traditional wireless video transmission sends pixel-level information and can be costly in bandwidth and processing time.  
-VISTA addresses this by splitting video frames into:
+Behavior segment: moving objects
 
-- **Environment segment**: static background
-- **Behavior segment**: moving objects
-- **SLG (Semantic Location Graph)**: semantic labels and object locations across frames
+SLG (Semantic Location Graph): semantic labels and object location information across frames
 
-Only the necessary semantic information is transmitted, and the receiver reconstructs the video with interpolation and semantic guidance.
+These semantic components are then transmitted through a channel-adaptive JSCC module, and the receiver reconstructs the video using frame interpolation and semantic guidance.
 
-<p align="center">
-  <img src="results/fig1_transceiver.png" alt="VISTA transceiver diagram" width="95%">
-</p>
+<p align="center"> <img src="results/Fig1.png" alt="VISTA transceiver diagram" width="95%"> </p> <p align="center"><em>Figure 1. The diagram of transceiver in VISTA.</em></p>
+Pipeline
+1. Semantic Segmentation
 
-<p align="center"><em>Figure 1. Transceiver design of VISTA.</em></p>
-
----
-
-## Pipeline
-
-### 1. Semantic Segmentation
-
-In the first step, video frames are segmented into static background and moving objects.
-
-VISTA uses **MMSegmentation** for semantic segmentation.
+In the first step of the process, frames to be transmitted are first segmented into static objects and moving objects.
+MMSegmentation is used here for this purpose.
 
 Run:
 
-```bash
 ..\VISTA\mmsegmentation-master\demo\img_seg.py
 
-This stage prepares the semantic components needed for transmission.
+This stage provides the semantic information needed for the following transmission and reconstruction process.
 
 2. Dynamic JSCC
 
-The segmented semantic features are transmitted through a dynamic joint source-channel coding (JSCC) module, which adapts to channel conditions.
+The semantic features are transmitted through a dynamic joint source-channel coding (JSCC) module, which adapts to channel conditions.
 
 This part is based on the paper:
 
 Deep Joint Source-Channel Coding for Wireless Image Transmission with Adaptive Rate Control
 
-Reference implementation:
+Source GitHub page:
 https://github.com/mingyuyng/Dynamic_JSCC
 
 3. Video Frame Interpolation
 
-At the receiver side, missing behavior frames are recovered by frame interpolation, guided by transmitted semantic information.
+At the receiver side, lost frames are interpolated based on received ones to recover the full video.
 
 This part is based on the paper:
 
 Video Frame Interpolation with Transformer
 
-Reference implementation:
+Source GitHub page:
 https://github.com/dvlab-research/VFIformer
 
 Run:
@@ -74,50 +60,58 @@ Run:
 ..\VISTA\VFIformer-main\video_interpolation_paper.py
 Main Idea
 
-The key idea of VISTA is to avoid transmitting redundant visual information.
+The core idea of VISTA is to avoid transmitting redundant visual information.
 
-The static environment only needs limited transmission
+The static environment can be transmitted more efficiently
 
-The dynamic behavior segments are sampled and transmitted more efficiently
+The dynamic behavior segments are sampled and reconstructed
 
-The SLG helps preserve object semantics and spatial relations
+The semantic location graph helps preserve object semantics and spatial structure
 
-The frame interpolation module reconstructs missing intermediate behavior frames
+The frame interpolation module restores missing frames to recover a complete video sequence
 
-This design improves transmission efficiency while maintaining good reconstruction quality, especially under noisy wireless conditions.
+By combining semantic segmentation, adaptive JSCC, and frame interpolation, VISTA improves transmission efficiency while preserving visual quality.
 
 Results
-PSNR under Different SNRs
+PSNR Performance
 
-The figure below shows the PSNR performance of recovered frames under different channel SNRs and interpolation ratios.
+The figure below shows the PSNR performance of recovered video frames under different channel SNRs.
 
-<p align="center"> <img src="results/fig2_psnr.png" alt="PSNR performance under different SNRs" width="70%"> </p> <p align="center"><em>Figure 2. PSNR of recovered video frames versus SNR.</em></p>
+<p align="center"> <img src="results/Fig2.png" alt="PSNR performance under different SNRs" width="75%"> </p> <p align="center"><em>Figure 2. PSNR performance of recovered video frames versus varying SNRs.</em></p>
 
-From the paper, VISTA achieves stronger robustness in low-SNR settings and shows better visual quality than the conventional scheme in challenging channel conditions.
+This result shows how reconstruction quality changes under different channel conditions and interpolation ratios.
 
 Visual Comparison
 
-The following comparison shows reconstructed video frames under different methods and interpolation settings.
+The figure below compares reconstruction quality on a sample frame from the VIRAT dataset, including:
 
-<p align="center"> <img src="results/fig3_visual_comparison.png" alt="Visual comparison on VIRAT frame" width="95%"> </p> <p align="center"><em>Figure 3. Visual comparison of reconstructed frames.</em></p>
+the original frame
 
-VISTA preserves object structures more clearly and produces better perceptual quality than the compared baseline methods.
+VISTA with different interpolation ratios
+
+JSCC-VFI with different interpolation ratios
+
+the conventional scheme
+
+<p align="center"> <img src="results/Fig3.png" alt="Visual comparison on a VIRAT frame" width="95%"> </p> <p align="center"><em>Figure 3. Visual comparison on a video frame sample from the VIRAT dataset.</em></p>
+
+This comparison shows that VISTA can preserve the main visual structure of the scene while maintaining better perceptual quality than the conventional baseline under challenging transmission settings.
 
 Processing Time
 
-The figure below compares total processing time for 20 consecutive video frames.
+The figure below shows the total processing time for 20 consecutive video frames under different interpolation proportions.
 
-<p align="center"> <img src="results/fig4_processing_time.png" alt="Processing time comparison" width="70%"> </p> <p align="center"><em>Figure 4. Total processing time under different interpolation ratios.</em></p>
+<p align="center"> <img src="results/Fig4.png" alt="Total processing time comparison" width="75%"> </p> <p align="center"><em>Figure 4. Total processing time for 20 consecutive video frames under different interpolation proportions.</em></p>
 
-VISTA significantly reduces processing time compared with the conventional scheme, while also remaining more efficient than the JSCC-VFI baseline.
+This result highlights the efficiency of VISTA in terms of end-to-end processing cost.
 
 Transmission Bits
 
-The figure below compares total transmission bits for 20 consecutive video frames.
+The figure below shows the total transmission bits consumed for 20 consecutive video frames under different interpolation proportions.
 
-<p align="center"> <img src="results/fig5_transmission_bits.png" alt="Transmission bits comparison" width="70%"> </p> <p align="center"><em>Figure 5. Total transmission bits under different interpolation ratios.</em></p>
+<p align="center"> <img src="results/Fig5.png" alt="Total transmission bits comparison" width="75%"> </p> <p align="center"><em>Figure 5. Total transmission bits consumed for 20 consecutive video frames under different interpolation proportions.</em></p>
 
-One of the main advantages of VISTA is its large reduction in required transmission bits, showing the benefit of transmitting semantics instead of raw pixel-level information.
+This demonstrates the main advantage of VISTA: reducing transmission overhead by sending semantic information instead of full raw video content.
 
 Project Structure
 
@@ -130,44 +124,24 @@ VISTA/
 ├── VFIformer-main/
 │   └── video_interpolation_paper.py
 ├── results/
-│   ├── fig1_transceiver.png
-│   ├── fig2_psnr.png
-│   ├── fig3_visual_comparison.png
-│   ├── fig4_processing_time.png
-│   └── fig5_transmission_bits.png
+│   ├── Fig1.png
+│   ├── Fig2.png
+│   ├── Fig3.png
+│   ├── Fig4.png
+│   └── Fig5.png
 └── README.md
-Requirements
+Notes
 
-This project depends on the following major components:
+Sample videos and simulation results can be found in the video file(s).
 
-Python 3.9
+All figures used in this README are stored under the results/ folder.
 
-MMSegmentation
-
-Dynamic JSCC implementation
-
-VFIformer
-
-Please install the dependencies required by each module before running the full pipeline.
-
-Reference
-
-If you use this project, please cite the paper:
-
-@article{liang2023vista,
-  title={VISTA: Video Transmission over A Semantic Communication Approach},
-  author={Liang, Chengsi and Deng, Xiangyi and Sun, Yao and Cheng, Runze and Xia, Le and Niyato, Dusit and Imran, Muhammad Ali},
-  journal={arXiv preprint arXiv},
-  year={2023}
-}
 Acknowledgements
 
-This project builds upon the following open-source works:
+This project uses or builds upon the following open-source repositories:
 
 MMSegmentation
 
-Dynamic JSCC
+Dynamic JSCC: https://github.com/mingyuyng/Dynamic_JSCC
 
-VFIformer
-
-Their excellent implementations made this project possible.
+VFIformer: https://github.com/dvlab-research/VFIformer
